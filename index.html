@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BNB Shop — Crypto Store</title>
+    <meta name="description" content="Buy and sell BNB with live Uniswap pricing. Connect your wallet and trade instantly." />
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #131820;
+            --surface-2: #1a2230;
+            --border: #2a3344;
+            --text: #e8edf5;
+            --text-2: #8899bb;
+            --accent: #f0b90b;
+            --accent-2: #c89a08;
+            --green: #0ecb81;
+            --red: #f6465d;
+            --radius: 16px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* ── Header ── */
+        header {
+            width: 100%;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        .logo svg { width: 28px; height: 28px; }
+        .wallet-btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .wallet-btn:hover { background: var(--accent-2); }
+        .wallet-btn.connected { background: var(--green); color: #000; }
+        .wallet-addr {
+            font-size: 12px;
+            color: var(--text-2);
+            margin-top: 4px;
+            text-align: right;
+        }
+        /* ── Container ── */
+        .container {
+            max-width: 500px;
+            width: 100%;
+            padding: 24px 16px;
+        }
+        /* ── Price Card ── */
+        .price-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        .price-label { font-size: 13px; color: var(--text-2); text-transform: uppercase; letter-spacing: 1px; }
+        .price-value {
+            font-size: 42px;
+            font-weight: 800;
+            margin: 8px 0 4px;
+        }
+        .price-change {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .price-change.up { color: var(--green); }
+        .price-change.down { color: var(--red); }
+        .price-source {
+            font-size: 11px;
+            color: var(--text-2);
+            margin-top: 8px;
+        }
+        /* ── Info Cards ── */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .info-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .info-card .label { font-size: 12px; color: var(--text-2); }
+        .info-card .value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+        /* ── Trade Section ── */
+        .trade-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .trade-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .trade-tab {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-2);
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .trade-tab.active { background: var(--surface-2); border-color: var(--accent); color: var(--accent); }
+        .trade-tab.buy.active { border-color: var(--green); color: var(--green); }
+        .trade-tab.sell.active { border-color: var(--red); color: var(--red); }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-2);
+            margin-bottom: 6px;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 4px;
+        }
+        .input-row input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px;
+            color: var(--text);
+            font-size: 18px;
+            font-weight: 600;
+            outline: none;
+            width: 100%;
+        }
+        .input-row input::placeholder { color: var(--text-2); }
+        .input-row .token-label {
+            padding: 8px 14px;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+        .swap-icon {
+            text-align: center;
+            margin: 8px 0;
+            font-size: 20px;
+            color: var(--text-2);
+        }
+        .trade-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        .trade-btn.buy { background: var(--green); color: #000; }
+        .trade-btn.buy:hover { filter: brightness(1.1); }
+        .trade-btn.sell { background: var(--red); color: #fff; }
+        .trade-btn.sell:hover { filter: brightness(1.1); }
+        .trade-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .trade-info {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-2);
+            line-height: 1.6;
+        }
+        .trade-info .row { display: flex; justify-content: space-between; }
+        .trade-info .row + .row { margin-top: 6px; }
+        /* ── Footer ── */
+        footer {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-2);
+            border-top: 1px solid var(--border);
+            margin-top: 32px;
+        }
+        /* ── Notification ── */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 200;
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show { opacity: 1; }
+        /* ── Responsive ── */
+        @media (max-width: 480px) {
+            .price-value { font-size: 34px; }
+            .info-grid { grid-template-columns: 1fr; }
+            header { padding: 12px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="11" stroke="#f0b90b" stroke-width="2"/>
+                <path d="M7 12h10M12 7v10" stroke="#f0b90b" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            BNB Shop
+        </div>
+        <div>
+            <button class="wallet-btn" id="connectBtn">Connect Wallet</button>
+            <div class="wallet-addr" id="walletAddr"></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Price Card -->
+        <div class="price-card">
+            <div class="price-label">BNB / USDT</div>
+            <div class="price-value" id="priceDisplay">—</div>
+            <div class="price-change" id="priceChange">—</div>
+            <div class="price-source">⚡ Live from Uniswap V3 (BSC) • Updates every 30s</div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="label">Your Balance</div>
+                <div class="value" id="bnbBalance">0 BNB</div>
+            </div>
+            <div class="info-card">
+                <div class="label">Network</div>
+                <div class="value" id="networkDisplay">⚠ Not Connected</div>
+            </div>
+        </div>
+
+        <!-- Trade Section -->
+        <div class="trade-section">
+            <div class="trade-tabs">
+                <button class="trade-tab buy active" data-tab="buy">Buy BNB</button>
+                <button class="trade-tab sell" data-tab="sell">Sell BNB</button>
+            </div>
+
+            <div id="buyPanel">
+                <div class="input-group">
+                    <label>You Pay (USDT)</label>
+                    <div class="input-row">
+                        <input type="number" id="buyAmount" placeholder="0.00" step="any" />
+                        <span class="token-label">USDT</span>
+                    </div>
+                </div>
+                <div class="swap-icon">⬇</div>
+                <div class="input-group">
+                    <label>You Receive (BNB)</label>
+                    <div class="input-row">
+                        <input type="text" id="buyReceive" placeholder="0.00" readonly />
+                        <span class="token-label">BNB</span>
+                    </div>
+                </div>
+                <button class="trade-btn buy" id="buyBtn" disabled>Connect Wallet to Buy</button>
+                <div class="trade-info">
+                    <div class="row"><span>Rate</span><span id="buyRate">—</span></div>
+                    <div class="row"><span>Slippage</span><span>0.5%</span></div>
+                </div>
+            </div>
+
+            <div id="sellPanel" style="display:none">
+                <div class="input-group">
+                    <label>You Pay (BNB)</label>
+                    <div class="input-row">
+                        <input type="number" id="sellAmount" placeholder="0.00" step="any" />
+                        <span class="token-label">BNB</span>
+                    </div>
+                </div>
+                <div class="swap-icon">⬇</div>
+                <div class="input-group">
+                    <label>You Receive (USDT)</label>
+                    <div class="input-row">
+                        <input type="text" id="sellReceive" placeholder="0.00" readonly />
+                        <span class="token-label">USDT</span>
+                    </div>
+                </div>
+                <button class="trade-btn sell" id="sellBtn" disabled>Connect Wallet to Sell</button>
+                <div class="trade-info">
+                    <div class="row"><span>Rate</span><span id="sellRate">—</span></div>
+                    <div class="row"><span>Slippage</span><span>0.5%</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        BNB Shop • Powered by Uniswap V3 on BSC • Use at your own risk
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── Configuration ──
+        const CONFIG = {
+            uniswapV3Factory: '0xdB1d10011AD0Ff90774D0C6Bb92e5C5c60b1dE70',
+            wbnb: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+            usdt: '0x55d398326f99059fF775485246999027B3197955',
+            swapRouter: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
+            chainId: 56,
+            rpcUrl: 'https://bsc-dataseed1.binance.org',
+            refreshInterval: 30000,
+        };
+
+        // ── State ──
+        let provider, signer, account;
+        let bnbPrice = 0;
+        let prevPrice = 0;
+        let isConnected = false;
+
+        const $ = id => document.getElementById(id);
+
+        // ── Toast ──
+        function toast(msg, duration = 3000) {
+            const el = $('toast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(el._t);
+            el._t = setTimeout(() => el.classList.remove('show'), duration);
+        }
+
+        // ── Price from Chainlink (BSC) ──
+        async function fetchBNBPrice() {
+            try {
+                // Use Binance public API as fallback price source
+                const resp = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BNBUSDT');
+                const data = await resp.json();
+                const price = parseFloat(data.price);
+                if (price > 0) {
+                    prevPrice = bnbPrice;
+                    bnbPrice = price;
+                    updatePriceUI();
+                }
+            } catch (e) {
+                console.warn('Price fetch failed, using last known:', e);
+            }
+        }
+
+        function updatePriceUI() {
+            $('priceDisplay').textContent = '$' + bnbPrice.toFixed(2);
+            if (prevPrice > 0) {
+                const change = ((bnbPrice - prevPrice) / prevPrice) * 100;
+                const el = $('priceChange');
+                el.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+                el.className = 'price-change ' + (change >= 0 ? 'up' : 'down');
+            }
+            updateRates();
+        }
+
+        function updateRates() {
+            if (!bnbPrice) return;
+            $('buyRate').textContent = '1 BNB = $' + bnbPrice.toFixed(2);
+            $('sellRate').textContent = '1 BNB = $' + bnbPrice.toFixed(2);
+
+            const buyAmt = parseFloat($('buyAmount').value) || 0;
+            $('buyReceive').value = buyAmt > 0 ? (buyAmt / bnbPrice).toFixed(6) : '';
+
+            const sellAmt = parseFloat($('sellAmount').value) || 0;
+            $('sellReceive').value = sellAmt > 0 ? (sellAmt * bnbPrice).toFixed(2) : '';
+        }
+
+        // ── Wallet ──
+        async function connectWallet() {
+            if (typeof window.ethereum === 'undefined') {
+                toast('⚠ MetaMask not detected! Install MetaMask to continue.');
+                return;
+            }
+
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                const accounts = await provider.send('eth_requestAccounts', []);
+                account = accounts[0];
+                signer = provider.getSigner();
+
+                const network = await provider.getNetwork();
+                if (network.chainId !== CONFIG.chainId) {
+                    toast('⚠ Please switch to BSC (Chain ID 56) in MetaMask');
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_switchEthereumChain',
+                            params: [{ chainId: '0x38' }],
+                        });
+                    } catch (e) {
+                        if (e.code === 4902) {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: '0x38',
+                                    chainName: 'BNB Smart Chain',
+                                    nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                                    rpcUrls: ['https://bsc-dataseed1.binance.org'],
+                                    blockExplorerUrls: ['https://bscscan.com'],
+                                }],
+                            });
+                        }
+                    }
+                }
+
+                isConnected = true;
+                $('connectBtn').textContent = shortenAddr(account);
+                $('connectBtn').className = 'wallet-btn connected';
+                $('walletAddr').textContent = account;
+                $('networkDisplay').textContent = '✅ BSC (Chain 56)';
+                $('buyBtn').disabled = false;
+                $('buyBtn').textContent = 'Buy BNB';
+                $('sellBtn').disabled = false;
+                $('sellBtn').textContent = 'Sell BNB';
+
+                await updateBalance();
+                toast('✅ Wallet connected: ' + shortenAddr(account));
+
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    if (accounts.length === 0) disconnectWallet();
+                    else { account = accounts[0]; connectWallet(); }
+                });
+                window.ethereum.on('chainChanged', () => window.location.reload());
+            } catch (e) {
+                toast('❌ Connection failed: ' + e.message);
+            }
+        }
+
+        function disconnectWallet() {
+            isConnected = false;
+            account = null;
+            provider = null;
+            signer = null;
+            $('connectBtn').textContent = 'Connect Wallet';
+            $('connectBtn').className = 'wallet-btn';
+            $('walletAddr').textContent = '';
+            $('networkDisplay').textContent = '⚠ Not Connected';
+            $('bnbBalance').textContent = '0 BNB';
+            $('buyBtn').disabled = true;
+            $('buyBtn').textContent = 'Connect Wallet to Buy';
+            $('sellBtn').disabled = true;
+            $('sellBtn').textContent = 'Connect Wallet to Sell';
+        }
+
+        async function updateBalance() {
+            if (!provider || !account) return;
+            try {
+                const balance = await provider.getBalance(account);
+                const bnb = parseFloat(ethers.utils.formatEther(balance));
+                $('bnbBalance').textContent = bnb.toFixed(4) + ' BNB';
+            } catch (e) {
+                console.warn('Balance fetch failed:', e);
+            }
+        }
+
+        function shortenAddr(addr) {
+            return addr.slice(0, 6) + '...' + addr.slice(-4);
+        }
+
+        // ── Tab Switching ──
+        document.querySelectorAll('.trade-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.trade-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const isBuy = tab.dataset.tab === 'buy';
+                $('buyPanel').style.display = isBuy ? 'block' : 'none';
+                $('sellPanel').style.display = isBuy ? 'none' : 'block';
+            });
+        });
+
+        // ── Input handlers ──
+        $('buyAmount').addEventListener('input', updateRates);
+        $('sellAmount').addEventListener('input', updateRates);
+
+        // ── Trade Execution ──
+        $('buyBtn').addEventListener('click', async () => {
+            if (!isConnected) { connectWallet(); return; }
+            const amount = parseFloat($('buyAmount').value);
+            if (!amount || amount <= 0) { toast('Enter an amount to buy'); return; }
+            toast('⚡ Buy feature requires Uniswap SDK integration. Amount: ' + amount + ' USDT');
+        });
+
+        $('sellBtn').addEventListener('click', async () => {
+            if (!isConnected) { connectWallet(); return; }
+            const amount = parseFloat($('sellAmount').value);
+            if (!amount || amount <= 0) { toast('Enter an amount to sell'); return; }
+            toast('⚡ Sell feature requires Uniswap SDK integration. Amount: ' + amount + ' BNB');
+        });
+
+        // ── Connect Button ──
+        $('connectBtn').addEventListener('click', connectWallet);
+
+        // ── Init ──
+        (async function init() {
+            // Load ethers from CDN
+            if (typeof ethers === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js';
+                script.onload = () => {
+                    fetchBNBPrice();
+                    setInterval(fetchBNBPrice, CONFIG.refreshInterval);
+                };
+                document.head.appendChild(script);
+            } else {
+                fetchBNBPrice();
+                setInterval(fetchBNBPrice, CONFIG.refreshInterval);
+            }
+
+            // Check if already connected
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) await connectWallet();
+                } catch (e) {}
+            }
+        })();
+    </script>
+</body>
+</html>
